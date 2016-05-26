@@ -1,0 +1,43 @@
+{
+  "name": "kcsp-client",
+  "version": "0.1.0",
+  "description": "A compatible client for kcsp",
+  "bin": {
+    "kcsp-client": "./bin/kcsp-client"
+  },
+  "scripts": {
+    "compile": "babel -d lib/ src/",
+    "prepublish": "npm run compile"
+  },
+  "author": "Dazzy Ding",
+  "license": "GPL-2.0",
+  "files": [
+    "bin",
+    "lib"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yukixz/kcsp-client.git"
+  },
+  "keywords": [
+    "kancolle",
+    "proxy"
+  ],
+  "bugs": {
+    "url": "https://github.com/yukixz/kcsp-client/issues"
+  },
+  "homepage": "https://github.com/yukixz/kcsp-client",
+  "dependencies": {
+    "node-getopt": "^0.2.3",
+    "request": "^2.67.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.4.0",
+    "babel-plugin-syntax-export-extensions": "^6.3.13",
+    "babel-plugin-transform-async-to-generator": "^6.4.6",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.4.5",
+    "babel-plugin-transform-export-extensions": "^6.4.0",
+    "babel-plugin-transform-object-rest-spread": "^6.3.13",
+    "babel-plugin-transform-strict-mode": "^6.3.13"
+  }
+}
