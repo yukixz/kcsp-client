@@ -48,7 +48,11 @@ function getRequestId(req) {
 
 function isGameAPI(req) {
     let urlp = url.parse(req.url)
-    return urlp.pathname.startsWith('/kcsapi/')
+    if (urlp.pathname.startsWith('/kcsapi/'))
+        return true
+    if (config.kcIP.includes(urlp.hostname))
+        return true
+    return false
 }
 
 async function onRequest(req, resp) {
@@ -67,7 +71,7 @@ async function onRequest(req, resp) {
             proxy:   PROXY,
             timeout: TIMEOUT,
             encoding: null,
-            followRedirect: false
+            followRedirect: false,
         }
         let desc = null
         let isGameAPI_ = isGameAPI(req)
@@ -77,7 +81,7 @@ async function onRequest(req, resp) {
             opts.headers['cache-token'] = token
 
             let urlp = url.parse(opts.url)
-            desc = `${token} ${urlp.pathname}`
+            desc = `API ${token} ${urlp.pathname}`
         } else {
             desc = `${req.method} ${req.url}`
         }
@@ -103,7 +107,6 @@ async function onRequest(req, resp) {
             resp.writeHead(rr.statusCode, filterHeaders(rr.headers))
             resp.end(rr.body)
         } else {
-            resp.writeHead(503)
             resp.end()
         }
         let etime = Date.now()
