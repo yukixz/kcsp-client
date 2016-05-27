@@ -48,11 +48,9 @@ function getRequestId(req) {
 
 function isGameAPI(req) {
     let urlp = url.parse(req.url)
-    if (urlp.pathname.startsWith('/kcsapi/'))
-        return true
-    if (config.kcIP.includes(urlp.hostname))
-        return true
-    return false
+    return (urlp.hostname === 'osapi.dmm.com' ||
+            urlp.pathname.startsWith('/kcsapi/') ||
+            urlp.pathname.startsWith('/gadget/js/kcs_'))
 }
 
 async function onRequest(req, resp) {
@@ -107,10 +105,9 @@ async function onRequest(req, resp) {
             resp.writeHead(rr.statusCode, filterHeaders(rr.headers))
             resp.end(rr.body)
         } else {
-            resp.end()
+            resp.socket.destroy()
         }
-        let etime = Date.now()
-        log(desc, `Fin ${(etime - stime) / 1000}s`)
+        log(desc, `Fin ${(Date.now() - stime) / 1000}s`)
     })
 }
 
