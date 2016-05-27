@@ -1,6 +1,7 @@
 "use strict"
 
 import http from 'http';
+import net from 'net';
 import url from 'url';
 import request from 'request';
 import config from './config'
@@ -54,14 +55,12 @@ async function onRequest(req, resp) {
         let opts = {
             method:  req.method,
             url:     req.url,
+            body:    (body.length > 0) ? body : null,
             headers: filterHeaders(req.headers),
             proxy:   PROXY,
             timeout: TIMEOUT,
             encoding: null,
             followRedirect: false
-        }
-        if (body.length > 0) {
-            opts.body = body
         }
         let token = getRequestId(req)
         opts.headers['request-uri'] = opts.url
@@ -99,9 +98,33 @@ async function onRequest(req, resp) {
     })
 }
 
+async function onConnect(req, sock) {
+    let desc = `CONNECT ${req.url}`
+    log(desc, 'accepted')
+
+    let rSock = net.createConnection({
+        host: config.host,
+        port: config.port,
+    })
+    rSock.on('connect', () => {
+        log(desc, `connect`)
+        rSock.write(`CONNECT ${req.url} HTTP/${req.httpVersion}\r\n\r\n`)
+        sock.pipe(rSock)
+        rSock.pipe(sock)
+    })
+    rSock.on('error', (err) => {
+        log(desc, `error\n\t${err}`)
+        sock.end()
+        rSock.end()
+    })
+    sock.on('close', () => rSock.end())
+    rSock.on('close', () => sock.end())
+}
+
 let httpd = http.createServer()
 httpd.on('request', onRequest)
-httpd.listen(8099, '127.0.0.1', () => {
+httpd.on('connect', onConnect)
+httpd.listen(config.local, '127.0.0.1', () => {
     PROXY = `http://${config.host}:${config.port}/`
     RETRY = config.retry
     TIMEOUT = config.timeout * 1000
