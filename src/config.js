@@ -6,6 +6,7 @@ let getopt = new Getopt([
     ['r', 'retry=100',  'maximum retry times'],
     ['d', 'delay=2',    'delay x seconds on retry'],
     ['t', 'timeout=20', 'timeout in seconds'],
+    ['l', 'local=8099', 'kcsp client local port'],
     ['h', 'help',       'show this help']
 ]).bindHelp()
 let opts = getopt.parseSystem()
@@ -21,4 +22,5 @@ module.exports = {
     retry: opts.options['retry'] || 100,
     delay: opts.options['delay'] || 2,
     timeout: opts.options['timeout'] || 20,
+    local: opts.options['local'] || 8099,
 }
