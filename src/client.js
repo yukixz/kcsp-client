@@ -46,12 +46,19 @@ function getRequestId(req) {
     return Date.now().toString(36)
 }
 
+function isGameAPI(req) {
+    let urlp = url.parse(req.url)
+    return urlp.pathname.startsWith('/kcsapi/')
+}
+
 async function onRequest(req, resp) {
     let body = new Buffer(0)
     req.on('data', (chunk) => {
         body = Buffer.concat([body, chunk])
     })
     req.on('end', async () => {
+        let stime = Date.now()
+
         let opts = {
             method:  req.method,
             url:     req.url,
@@ -62,29 +69,36 @@ async function onRequest(req, resp) {
             encoding: null,
             followRedirect: false
         }
-        let token = getRequestId(req)
-        opts.headers['request-uri'] = opts.url
-        opts.headers['cache-token'] = token
+        let desc = null
+        let isGameAPI_ = isGameAPI(req)
+        if (isGameAPI_) {
+            let token = getRequestId(req)
+            opts.headers['request-uri'] = opts.url
+            opts.headers['cache-token'] = token
 
-        let oUrl = url.parse(opts.url)
-        let desc = `${token} ${oUrl.pathname}`
-        let stime = Date.now()
+            let urlp = url.parse(opts.url)
+            desc = `${token} ${urlp.pathname}`
+        } else {
+            desc = `${req.method} ${req.url}`
+        }
 
         let rr = null
         for (let i of Array(RETRY).keys()) {
             log(desc, `Try # ${i}`)
             try {
                 rr = await makeRequest(opts)
-                if (! (rr.statusCode === 503)) {
-                    break
-                }
             } catch (e) {
                 if (! ['ECONNRESET', 'ENOTFOUND', 'ESOCKETTIMEDOUT', 'ETIMEDOUT', 'ECONNREFUSED', 'EHOSTUNREACH', 'EPIPE', 'EAI_AGAIN'].includes(e.code)) {
                     console.error(e)
                 }
             }
-            await delay(DELAY)
+            if (isGameAPI_ && (rr == null || rr.statusCode === 503)) {
+                await delay(DELAY)
+            } else {
+                break
+            }
         }
+
         if (rr) {
             resp.writeHead(rr.statusCode, filterHeaders(rr.headers))
             resp.end(rr.body)
@@ -92,7 +106,6 @@ async function onRequest(req, resp) {
             resp.writeHead(503)
             resp.end()
         }
-
         let etime = Date.now()
         log(desc, `Fin ${(etime - stime) / 1000}s`)
     })
