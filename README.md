@@ -1,3 +1,4 @@
+[![NPM](https://nodei.co/npm/kcsp-client.png)](https://nodei.co/npm/kcsp-client/)
 
 kcsp-client
 ====
@@ -11,4 +12,10 @@ Install
 -------
 ```
 $ npm install -g kcsp-client
+```
+
+Usage
+-------
+```
+$ kcsp-client --help
 ```
