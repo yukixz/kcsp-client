@@ -5,6 +5,7 @@ import net from 'net';
 import url from 'url';
 import request from 'request';
 import config from './config'
+import logger from './logger'
 
 let PROXY, RETRY, TIMEOUT, DELAY;
 
@@ -25,10 +26,6 @@ function delay(ms) {
     return new Promise((resolve, reject) => {
         setTimeout(() => resolve(), ms)
     })
-}
-
-function log(desc, msg) {
-    console.log(desc, ':', msg)
 }
 
 
@@ -79,19 +76,20 @@ async function onRequest(req, resp) {
             opts.headers['cache-token'] = token
 
             let urlp = url.parse(opts.url)
-            desc = `API ${token} ${urlp.pathname}`
+            desc = `API ${urlp.pathname} ${token}`
         } else {
             desc = `${req.method} ${req.url}`
         }
 
         let rr = null
         for (let i of Array(RETRY).keys()) {
-            log(desc, `Try # ${i}`)
+            (i > 0 ? logger.warn : logger.log)(desc, `Try # ${i}`)
             try {
                 rr = await makeRequest(opts)
             } catch (e) {
-                if (! ['ECONNRESET', 'ENOTFOUND', 'ESOCKETTIMEDOUT', 'ETIMEDOUT', 'ECONNREFUSED', 'EHOSTUNREACH', 'EPIPE', 'EAI_AGAIN'].includes(e.code)) {
-                    console.error(e)
+                // 'ECONNRESET', 'ENOTFOUND', 'ESOCKETTIMEDOUT', 'ETIMEDOUT', 'ECONNREFUSED', 'EHOSTUNREACH', 'EPIPE', 'EAI_AGAIN'
+                if (! ['ESOCKETTIMEDOUT', 'ETIMEDOUT'].includes(e.code)) {
+                    logger.error(e)
                 }
             }
             if (isGameAPI_ && (rr == null || rr.statusCode === 503)) {
@@ -107,26 +105,26 @@ async function onRequest(req, resp) {
         } else {
             resp.socket.destroy()
         }
-        log(desc, `Fin ${(Date.now() - stime) / 1000}s`)
+        logger.log(desc, `Fin ${(Date.now() - stime) / 1000}s (${rr.statusCode})`)
     })
 }
 
 async function onConnect(req, sock) {
     let desc = `CONNECT ${req.url}`
-    log(desc, 'accepted')
+    logger.log(desc, 'accepted')
 
     let rSock = net.createConnection({
         host: config.host,
         port: config.port,
     })
     rSock.on('connect', () => {
-        log(desc, `connect`)
+        logger.log(desc, `connect`)
         rSock.write(`CONNECT ${req.url} HTTP/${req.httpVersion}\r\n\r\n`)
         sock.pipe(rSock)
         rSock.pipe(sock)
     })
     rSock.on('error', (err) => {
-        log(desc, `error\n\t${err}`)
+        logger.log(desc, `error\n\t${err}`)
         sock.end()
         rSock.end()
     })
@@ -140,12 +138,13 @@ httpd.on('connect', onConnect)
 httpd.listen(config.local, '127.0.0.1', () => {
     PROXY = `http://${config.host}:${config.port}/`
     RETRY = config.retry
-    TIMEOUT = config.timeout * 1000
     DELAY = config.delay * 1000
+    TIMEOUT = config.timeout * 1000
 
     let port = httpd.address().port
-    console.log(`Upstream proxy server is ${PROXY}`)
-    console.log(`Local proxy server listen at ${port}`)
+    logger.log(`Upstream proxy server is ${PROXY}`)
+    logger.log(`Retry: ${RETRY}\tDelay: ${DELAY}\tTimeout: ${TIMEOUT}`)
+    logger.log(`Local proxy server listen at ${port}`)
 })
 
 module.exports = httpd;
