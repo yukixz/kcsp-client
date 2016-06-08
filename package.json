@@ -1,6 +1,6 @@
 {
   "name": "kcsp-client",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "A compatible client for kcsp",
   "bin": {
     "kcsp-client": "./bin/kcsp-client"
