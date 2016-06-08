@@ -7,7 +7,7 @@ import request from 'request';
 import config from './config'
 import logger from './logger'
 
-let PROXY, RETRY, TIMEOUT, DELAY;
+let PROXY, RETRY, TIMEOUT;
 
 
 function makeRequest(opts) {
@@ -24,7 +24,11 @@ function makeRequest(opts) {
 
 function delay(ms) {
     return new Promise((resolve, reject) => {
-        setTimeout(() => resolve(), ms)
+        if (ms <= 0) {
+            resolve()
+        } else {
+            setTimeout(resolve, ms)
+        }
     })
 }
 
@@ -84,6 +88,7 @@ async function onRequest(req, resp) {
         let rr = null
         for (let i of Array(RETRY).keys()) {
             (i > 0 ? logger.warn : logger.log)(desc, `Try # ${i}`)
+            let rtime = Date.now()
             try {
                 rr = await makeRequest(opts)
             } catch (e) {
@@ -93,7 +98,7 @@ async function onRequest(req, resp) {
                 }
             }
             if (isGameAPI_ && (rr == null || rr.statusCode === 503)) {
-                await delay(DELAY)
+                await delay(rtime + TIMEOUT - Date.now())
             } else {
                 break
             }
@@ -138,13 +143,12 @@ httpd.on('connect', onConnect)
 httpd.listen(config.local, '127.0.0.1', () => {
     PROXY = `http://${config.host}:${config.port}/`
     RETRY = config.retry
-    DELAY = config.delay * 1000
     TIMEOUT = config.timeout * 1000
 
     let port = httpd.address().port
-    logger.log(`Upstream proxy server is ${PROXY}`)
-    logger.log(`Retry: ${RETRY}\tDelay: ${DELAY}\tTimeout: ${TIMEOUT}`)
-    logger.log(`Local proxy server listen at ${port}`)
+    logger.log(`Upstream proxy server: ${PROXY}`)
+    logger.log(`Retry: ${RETRY}, Timeout: ${TIMEOUT}`)
+    logger.log(`Local proxy server listen at port ${port}...`)
 })
 
 module.exports = httpd;
