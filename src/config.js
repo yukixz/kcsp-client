@@ -3,7 +3,7 @@ import Getopt from 'node-getopt'
 let getopt = new Getopt([
     ['s', 'host=HOST',  'kcsp server host'],
     ['p', 'port=8099',  'kcsp server port'],
-    ['r', 'retry=40',   'maximum retry timeout in seconds'],
+    ['r', 'retry=40',   'maximum retry times'],
     ['d', 'delay=5',    'delay x seconds on retry'],
     ['t', 'timeout=10', 'timeout in seconds'],
     ['l', 'local=8099', 'kcsp client local port'],
@@ -19,7 +19,7 @@ if (opts.options['host'] == null) {
 module.exports = {
     host: opts.options['host'],
     port: opts.options['port'] || 8099,
-    retry: opts.options['retry'] || 50,
+    retry: opts.options['retry'] || 40,
     delay: opts.options['delay'] || 5,
     timeout: opts.options['timeout'] || 10,
     local: opts.options['local'] || 8099,
