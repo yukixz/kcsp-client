@@ -55,9 +55,13 @@ function isGameAPI(req) {
 }
 
 async function onRequest(req, resp) {
+    let closed = false
     let body = new Buffer(0)
     req.on('data', (chunk) => {
         body = Buffer.concat([body, chunk])
+    })
+    req.on('close', () => {
+        closed = true
     })
     req.on('end', async () => {
         let stime = Date.now()
@@ -99,6 +103,9 @@ async function onRequest(req, resp) {
             }
             if (isGameAPI_ && (rr == null || rr.statusCode === 503)) {
                 await delay(rtime + TIMEOUT - Date.now())
+                if (closed) {
+                    break
+                }
             } else {
                 break
             }
@@ -110,7 +117,7 @@ async function onRequest(req, resp) {
         } else {
             resp.socket.destroy()
         }
-        logger.log(desc, `Fin ${(Date.now() - stime) / 1000}s (${rr.statusCode})`)
+        logger.log(desc, `Fin ${(Date.now() - stime) / 1000}s (${closed ? 'closed' : rr.statusCode})`)
     })
 }
 
