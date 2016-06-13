@@ -29,8 +29,9 @@
   "homepage": "https://github.com/yukixz/kcsp-client",
   "dependencies": {
     "colors": "^1.1.2",
+    "http-proxy-agent": "^1.0.0",
     "node-getopt": "^0.2.3",
-    "request": "^2.67.0"
+    "request": "^2.72.0"
   },
   "devDependencies": {
     "babel-preset-es2015-node6": "^0.2.0",

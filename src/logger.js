@@ -14,6 +14,10 @@ function log(...args) {
   console.log(...args.map(str => stringify(str)))
 }
 
+function info(...args) {
+  console.log(...args.map(str => stringify(str)))
+}
+
 function warn(...args) {
   console.warn(...args.map(str => stringify(str).yellow))
 }
@@ -22,4 +26,4 @@ function error(...args) {
   console.error(...args.map(str => stringify(str).bold.red))
 }
 
-module.exports = {log, warn, error}
+module.exports = {log, info, warn, error}
