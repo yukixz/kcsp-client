@@ -7,9 +7,14 @@ import request from 'request'
 import HttpProxyAgent from 'http-proxy-agent'
 import config from './config'
 import logger from './logger'
+import fs from 'fs'
 
+
+let pacPath = '../lib/proxy.pac'
+let pac = fs.readFileSync(pacPath,'utf8')
 
 let PROXY_AGENT = null
+
 function getProxyAgent() {
     if (PROXY_AGENT == null) {
         PROXY_AGENT = new HttpProxyAgent(`http://${config.host}:${config.port}/`)
@@ -61,9 +66,17 @@ async function onRequest(req, res) {
         return onAPIRequest(req, res)
     }
 
-    logger.info(`${req.method} ${req.url}`)
+
 
     let urlp = url.parse(req.url)
+
+    if (urlp.pathname === '/proxy.pac') {
+        let PAC = pac.replace('127.0.0.1:8099',req.headers.host);
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+        res.end(PAC)
+        return
+    }
+    logger.info(`${req.method} ${req.url}`)
     let opts = {
         method: req.method,
         protocol: urlp.protocol,
@@ -93,16 +106,16 @@ async function onAPIRequest(req, res) {
     req.on('data', (chunk) => {
         body = Buffer.concat([body, chunk])
     })
-    req.on('end', async () => {
+    req.on('end', async() => {
         let stime = Date.now()
 
         let urlp = url.parse(req.url)
-        let opts =  {
-            method:  req.method,
-            url:     req.url,
-            body:    (body.length > 0) ? body : null,
+        let opts = {
+            method: req.method,
+            url: req.url,
+            body: (body.length > 0) ? body : null,
             headers: filterHeaders(req.headers),
-            agent:   getProxyAgent(),
+            agent: getProxyAgent(),
             timeout: (config.timeout * 1000),
             encoding: null,
             followRedirect: false,
@@ -122,9 +135,8 @@ async function onAPIRequest(req, res) {
                         err ? reject(err) : resolve(res)
                     })
                 })
-            }
-            catch (err) {
-                if (! ['ESOCKETTIMEDOUT', 'ETIMEDOUT'].includes(err.code)) {
+            } catch (err) {
+                if (!['ESOCKETTIMEDOUT', 'ETIMEDOUT'].includes(err.code)) {
                     logger.error(description, err)
                 }
             }
