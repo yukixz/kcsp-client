@@ -64,6 +64,23 @@ async function onRequest(req, res) {
     logger.info(`${req.method} ${req.url}`)
 
     let urlp = url.parse(req.url)
+    
+    if (urlp.pathname === '/pac') {
+        let pac = `
+      function FindProxyForURL(url, host) {
+          if (host == 'osapi.dmm.com' ||
+              /:\\/\\/[\\d.]+\\/kcsapi\\//.test(url) ||
+              /:\\/\\/[\\d.]+\\/gadget\\/js\\/kcs_/.test(url)) {
+              return 'PROXY ${req.headers.host}';
+          } else {
+              return 'DIRECT';
+          }
+      }`
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+        res.end(pac)
+        return
+    }
+    
     let opts = {
         method: req.method,
         protocol: urlp.protocol,
