@@ -188,7 +188,7 @@ async function onConnect(req, sock) {
 let httpd = http.createServer()
 httpd.on('request', onRequest)
 httpd.on('connect', onConnect)
-httpd.listen(config.local, '0.0.0.0', () => {
+httpd.listen(config.local, '127.0.0.1', () => {
     let port = httpd.address().port
     logger.info(`Upstream proxy server: ${config.host}:${config.port}`)
     logger.info(`Retry: ${config.retry}, Timeout: ${config.timeout}`)
